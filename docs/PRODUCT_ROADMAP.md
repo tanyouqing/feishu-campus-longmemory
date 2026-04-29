@@ -1,7 +1,7 @@
 # Personal Work Memory Middleware 产品方案与迭代计划
 
-版本：V1.0  
-日期：2026-04-26  
+版本：P0 正式版 / 1.0.0  
+日期：2026-04-27  
 项目：feishu-campus-longmemory  
 赛道：飞书 AI 校园大赛 - 企业级 Agent 存储系统  
 方向：个人工作习惯与偏好记忆
@@ -391,6 +391,8 @@ P0 阶段建议优先实现以下接口：
 
 目标：交付可正式演示、可真实运行的个人工作记忆最小闭环。
 
+实现状态：P0 正式版已收口，覆盖真实事件接入、SQLite Evidence Store、显式 WorkPreferenceMemory / ReminderPreferenceMemory、记忆管理、Memory Context Pack、Reminder Scheduler、飞书 Bot 文本主动提醒、可解释 Evidence 回写和本地验收脚本。
+
 P0 包含：
 
 1. 真实飞书或 OpenClaw 事件接入。
@@ -415,6 +417,8 @@ P0 不包含：
 P0 总体验收标准：
 
 > 用户在真实飞书或 OpenClaw 中表达偏好，系统写入 SQLite；用户之后发起任务时，OpenClaw 能召回该偏好；用户设置提醒后，系统能在真实时间点通过飞书主动触达。
+
+P0 正式版验收脚本位于 `scripts/p0_acceptance.ps1`。脚本只检查真实链路，不创建 mock 飞书/OpenClaw 事件，不伪造成功结果。
 
 ## 11. P1 真实飞书办公行为采集与隐式记忆
 

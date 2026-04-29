@@ -1,0 +1,49 @@
+{
+  "id": "longmemory-context",
+  "name": "LongMemory Context",
+  "description": "Injects LongMemory Context Pack before OpenClaw builds the model prompt.",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "minLength": 1,
+        "description": "LongMemory service base URL, for example https://example.ngrok-free.app"
+      },
+      "ingestToken": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Bearer token for LongMemory private APIs"
+      },
+      "contextLimit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 20,
+        "default": 5
+      },
+      "contextEnabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "forceUserId": {
+        "type": "string",
+        "description": "Optional user id override used during testing or single-user deployments"
+      },
+      "hookDebug": {
+        "type": "boolean",
+        "default": true
+      },
+      "contextInjectionTarget": {
+        "type": "string",
+        "enum": ["system", "context", "system-and-context"],
+        "default": "system-and-context"
+      },
+      "contextSentinel": {
+        "type": "string",
+        "description": "Optional diagnostic instruction prepended to the injected context"
+      }
+    }
+  }
+}
