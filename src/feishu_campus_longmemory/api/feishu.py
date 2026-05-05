@@ -34,7 +34,7 @@ async def handle_feishu_events(request: Request) -> Response:
         event = normalize_feishu_message(data)
         result = store.insert_work_event(event)
         if result.created:
-            ExplicitMemoryExtractor().process_event(result.event, memory_store)
+            ExplicitMemoryExtractor(settings=settings).process_event(result.event, memory_store)
 
     handler = (
         lark.EventDispatcherHandler.builder(

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "feishu-campus-longmemory"
-version = "1.0.0"
+version = "1.0.1"
 description = "Personal Work Memory Middleware for Feishu and OpenClaw."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,6 +13,7 @@ dependencies = [
     "alembic>=1.13,<2.0",
     "fastapi>=0.111,<1.0",
     "lark-oapi>=1.5,<2.0",
+    "openai>=1.0,<3.0",
     "pydantic-settings>=2.2,<3.0",
     "sqlalchemy>=2.0,<3.0",
     "tzdata>=2024.1",

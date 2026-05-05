@@ -6,15 +6,20 @@ from fastapi.testclient import TestClient
 
 from feishu_campus_longmemory.config import Settings
 from feishu_campus_longmemory.main import create_app
+from feishu_campus_longmemory.memory.extractor import (
+    LLMMemoryCandidate,
+    OpenAICompatibleMemoryCandidateExtractor,
+)
 from feishu_campus_longmemory.memory.store import MemoryStore
 
 
-def _app_and_client(tmp_path):
+def _app_and_client(tmp_path, **settings_overrides):
     settings = Settings(
         database_url=f"sqlite:///{tmp_path / 'memory.db'}",
         ingest_token="test-token",
         log_level="ERROR",
         _env_file=None,
+        **settings_overrides,
     )
     app = create_app(settings)
     return app, TestClient(app)
@@ -80,6 +85,158 @@ def test_openclaw_event_auto_extracts_reminder_and_job(tmp_path) -> None:
     assert len(detail["reminder_jobs"]) == 1
     assert detail["reminder_jobs"][0]["schedule_type"] == "weekly"
     assert detail["reminder_jobs"][0]["status"] == "active"
+
+
+def test_llm_extractor_writes_work_preference_candidate(tmp_path, monkeypatch) -> None:
+    def fake_extract(self, text: str) -> list[LLMMemoryCandidate]:
+        return [
+            LLMMemoryCandidate(
+                memory_category="WorkPreferenceMemory",
+                work_type="weekly_report",
+                summary="周报先列阻塞事项，再给解决建议",
+                preference="周报先列阻塞事项，再给解决建议",
+                reminder_text="",
+                polarity="positive",
+                confidence=0.82,
+                evidence_text="我更习惯周报先列阻塞事项，再给解决建议",
+            )
+        ]
+
+    monkeypatch.setattr(OpenAICompatibleMemoryCandidateExtractor, "extract_candidates", fake_extract)
+    app, client = _app_and_client(tmp_path, llm_extraction_enabled=True, llm_api_key="test-key")
+
+    with client:
+        response = client.post(
+            "/events/ingest",
+            json=_openclaw_payload("msg_llm_pref", "我更习惯周报先列阻塞事项，再给解决建议"),
+            headers=_headers(),
+        )
+        memories = MemoryStore(app.state.db_engine).list_memories("ou_user")
+        detail = MemoryStore(app.state.db_engine).get_memory_detail(memories[0]["memory_id"])
+
+    assert response.status_code == 200
+    assert len(memories) == 1
+    assert memories[0]["memory_category"] == "WorkPreferenceMemory"
+    assert memories[0]["content_json"]["extractor"] == "llm_v0_6"
+    assert memories[0]["content_json"]["evidence_text"] in "我更习惯周报先列阻塞事项，再给解决建议"
+    assert detail is not None
+    assert detail["evidence_event_ids"] == [response.json()["event_id"]]
+
+
+def test_llm_extractor_writes_reminder_candidate_and_job(tmp_path, monkeypatch) -> None:
+    def fake_extract(self, text: str) -> list[LLMMemoryCandidate]:
+        return [
+            LLMMemoryCandidate(
+                memory_category="ReminderPreferenceMemory",
+                work_type="weekly_report",
+                summary="写周报",
+                preference="",
+                reminder_text="写周报",
+                polarity="",
+                confidence=0.86,
+                evidence_text="每周五上午帮我提醒写周报",
+            )
+        ]
+
+    monkeypatch.setattr(OpenAICompatibleMemoryCandidateExtractor, "extract_candidates", fake_extract)
+    app, client = _app_and_client(tmp_path, llm_extraction_enabled=True, llm_api_key="test-key")
+
+    with client:
+        response = client.post(
+            "/events/ingest",
+            json=_openclaw_payload("msg_llm_reminder", "每周五上午帮我提醒写周报"),
+            headers=_headers(),
+        )
+        memories = MemoryStore(app.state.db_engine).list_memories("ou_user")
+        detail = MemoryStore(app.state.db_engine).get_memory_detail(memories[0]["memory_id"])
+
+    assert response.status_code == 200
+    assert len(memories) == 1
+    assert memories[0]["memory_category"] == "ReminderPreferenceMemory"
+    assert memories[0]["content_json"]["extractor"] == "llm_v0_6"
+    assert detail is not None
+    assert len(detail["reminder_jobs"]) == 1
+    assert detail["reminder_jobs"][0]["schedule_type"] == "weekly"
+
+
+def test_llm_extractor_failure_falls_back_to_rules(tmp_path, monkeypatch) -> None:
+    def fake_extract(self, text: str) -> list[LLMMemoryCandidate]:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(OpenAICompatibleMemoryCandidateExtractor, "extract_candidates", fake_extract)
+    app, client = _app_and_client(tmp_path, llm_extraction_enabled=True, llm_api_key="test-key")
+
+    with client:
+        response = client.post(
+            "/events/ingest",
+            json=_openclaw_payload("msg_llm_fallback", "以后我的周报先写结论，再写风险"),
+            headers=_headers(),
+        )
+        memories = MemoryStore(app.state.db_engine).list_memories("ou_user")
+
+    assert response.status_code == 200
+    assert len(memories) == 1
+    assert memories[0]["content_json"]["extractor"] == "rules_v0_3"
+
+
+def test_llm_extractor_rejects_invalid_or_sensitive_candidates(tmp_path, monkeypatch) -> None:
+    def fake_extract(self, text: str) -> list[LLMMemoryCandidate]:
+        return [
+            LLMMemoryCandidate(
+                memory_category="TeamMemory",
+                work_type="weekly_report",
+                summary="周报先写风险",
+                preference="周报先写风险",
+                reminder_text="",
+                polarity="positive",
+                confidence=0.9,
+                evidence_text="我倾向周报先写风险",
+            ),
+            LLMMemoryCandidate(
+                memory_category="WorkPreferenceMemory",
+                work_type="unknown_type",
+                summary="周报先写风险",
+                preference="周报先写风险",
+                reminder_text="",
+                polarity="positive",
+                confidence=0.9,
+                evidence_text="我倾向周报先写风险",
+            ),
+            LLMMemoryCandidate(
+                memory_category="WorkPreferenceMemory",
+                work_type="weekly_report",
+                summary="周报先写 token=[REDACTED_SECRET]",
+                preference="周报先写 token=[REDACTED_SECRET]",
+                reminder_text="",
+                polarity="positive",
+                confidence=0.9,
+                evidence_text="我倾向周报先写风险",
+            ),
+            LLMMemoryCandidate(
+                memory_category="WorkPreferenceMemory",
+                work_type="weekly_report",
+                summary="周报先写风险",
+                preference="周报先写风险",
+                reminder_text="",
+                polarity="positive",
+                confidence=0.9,
+                evidence_text="这句证据不存在",
+            ),
+        ]
+
+    monkeypatch.setattr(OpenAICompatibleMemoryCandidateExtractor, "extract_candidates", fake_extract)
+    app, client = _app_and_client(tmp_path, llm_extraction_enabled=True, llm_api_key="test-key")
+
+    with client:
+        response = client.post(
+            "/events/ingest",
+            json=_openclaw_payload("msg_llm_reject", "我倾向周报先写风险"),
+            headers=_headers(),
+        )
+        memories = MemoryStore(app.state.db_engine).list_memories("ou_user")
+
+    assert response.status_code == 200
+    assert memories == []
 
 
 def test_duplicate_event_does_not_duplicate_memory(tmp_path) -> None:
@@ -214,4 +371,3 @@ def test_memory_api_requires_token(tmp_path) -> None:
         response = client.get("/memory/missing")
 
     assert response.status_code == 401
-

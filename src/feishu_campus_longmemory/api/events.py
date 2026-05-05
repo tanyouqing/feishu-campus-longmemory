@@ -33,7 +33,10 @@ def ingest_openclaw_event(
 
     result = EvidenceStore(request.app.state.db_engine).insert_work_event(event)
     if result.created:
-        ExplicitMemoryExtractor().process_event(result.event, MemoryStore(request.app.state.db_engine))
+        ExplicitMemoryExtractor(settings=request.app.state.settings).process_event(
+            result.event,
+            MemoryStore(request.app.state.db_engine),
+        )
     return IngestResponse(
         event_id=result.event.event_id,
         created=result.created,

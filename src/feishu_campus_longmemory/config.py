@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     reminder_scheduler_enabled: bool = False
     reminder_poll_interval_seconds: int = Field(default=30, ge=1, le=3600)
     reminder_batch_size: int = Field(default=10, ge=1, le=100)
+    llm_extraction_enabled: bool = False
+    llm_base_url: str = "https://ark.cn-beijing.volces.com/api/v3"
+    llm_model: str = "doubao-seed-2-0-lite-260215"
+    llm_api_key: str | None = None
+    llm_timeout_seconds: float = Field(default=10, ge=1, le=60)
 
     model_config = SettingsConfigDict(
         env_prefix="LONGMEMORY_",
