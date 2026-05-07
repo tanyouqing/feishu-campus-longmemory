@@ -11,6 +11,8 @@ from feishu_campus_longmemory.events.normalize import normalize_openclaw_event
 from feishu_campus_longmemory.events.store import EvidenceStore
 from feishu_campus_longmemory.memory.extractor import ExplicitMemoryExtractor
 from feishu_campus_longmemory.memory.store import MemoryStore
+from feishu_campus_longmemory.profile.extractor import UserProfileExtractor
+from feishu_campus_longmemory.profile.store import UserProfileStore
 from feishu_campus_longmemory.security import require_ingest_token
 
 router = APIRouter(tags=["events"])
@@ -36,6 +38,13 @@ def ingest_openclaw_event(
         ExplicitMemoryExtractor(settings=request.app.state.settings).process_event(
             result.event,
             MemoryStore(request.app.state.db_engine),
+        )
+        UserProfileExtractor(settings=request.app.state.settings).process_event(
+            result.event,
+            UserProfileStore(
+                request.app.state.db_engine,
+                max_markdown_chars=request.app.state.settings.profile_context_max_chars,
+            ),
         )
     return IngestResponse(
         event_id=result.event.event_id,

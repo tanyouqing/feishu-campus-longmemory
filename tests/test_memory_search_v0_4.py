@@ -290,10 +290,12 @@ def test_openclaw_integration_declares_ingest_hook_and_context_plugin() -> None:
     assert "message:preprocessed" in metadata
     assert "/events/ingest" in handler
     assert "before_prompt_build" in plugin_index
+    assert "/context/build" in plugin_index
     assert "/memory/search" in plugin_index
     assert "prependSystemContext" in plugin_index
     assert "longmemory-context" in plugin_manifest
     assert "openclaw" in plugin_package
     assert "contextLimit" in plugin_index
     assert "ingestToken" in plugin_manifest
+    assert "defaultForcedUserId" in plugin_index
     assert "resolveUserId(event))" not in plugin_index

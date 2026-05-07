@@ -15,6 +15,9 @@ def test_settings_defaults(monkeypatch) -> None:
         "LONGMEMORY_LLM_MODEL",
         "LONGMEMORY_LLM_API_KEY",
         "LONGMEMORY_LLM_TIMEOUT_SECONDS",
+        "LONGMEMORY_PROFILE_CONTEXT_ENABLED",
+        "LONGMEMORY_PROFILE_CONTEXT_MAX_CHARS",
+        "LONGMEMORY_PROFILE_CONTEXT_POSITION",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -33,3 +36,6 @@ def test_settings_defaults(monkeypatch) -> None:
     assert settings.llm_model == "doubao-seed-2-0-lite-260215"
     assert settings.llm_api_key is None
     assert settings.llm_timeout_seconds == 10
+    assert settings.profile_context_enabled is True
+    assert settings.profile_context_max_chars == 1200
+    assert settings.profile_context_position == "before_memory"

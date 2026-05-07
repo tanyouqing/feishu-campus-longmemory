@@ -145,7 +145,7 @@ source ~/longmemory.env;
 set +a
 ```
 
-还要改openclaw.json（用于plugins）
+ 另外要加入longmemory context plugin并激活，还要改openclaw.json（用于plugins）
 
 ### 3.3 验收
 
@@ -317,7 +317,7 @@ scripts\p0_acceptance.ps1
 
 该脚本不会创建模拟飞书/OpenClaw 事件，不会伪造成功。它只检查：
 
-- `/health` 是否返回 `1.0.0`。
+- `/health` 是否返回当前服务版本。
 - 指定用户是否已有真实 Evidence。
 - `/memory/search` 是否能召回记忆或给出空结果提示。
 - `/proactive/trigger` 是否能处理当前到期提醒，或给出未到期提示。

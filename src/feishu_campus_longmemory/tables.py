@@ -74,3 +74,26 @@ memory_audit_logs = sa.Table(
     sa.Column("after_json", sa.JSON(), nullable=True),
     sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
 )
+
+user_profiles = sa.Table(
+    "user_profiles",
+    metadata,
+    sa.Column("user_id", sa.String(length=128), primary_key=True),
+    sa.Column("tenant_id", sa.String(length=128), nullable=True),
+    sa.Column("profile_json", sa.JSON(), nullable=False),
+    sa.Column("profile_markdown", sa.Text(), nullable=True),
+    sa.Column("confidence", sa.Float(), nullable=False),
+    sa.Column("version", sa.Integer(), nullable=False),
+    sa.Column("last_event_id", sa.String(length=64), nullable=True),
+    sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+)
+
+user_profile_evidence_links = sa.Table(
+    "user_profile_evidence_links",
+    metadata,
+    sa.Column("user_id", sa.String(length=128), nullable=False),
+    sa.Column("event_id", sa.String(length=64), nullable=False),
+    sa.Column("relation_type", sa.String(length=64), nullable=False),
+    sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+)

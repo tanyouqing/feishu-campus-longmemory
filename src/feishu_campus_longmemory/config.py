@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     llm_model: str = "doubao-seed-2-0-lite-260215"
     llm_api_key: str | None = None
     llm_timeout_seconds: float = Field(default=10, ge=1, le=60)
+    profile_context_enabled: bool = True
+    profile_context_max_chars: int = Field(default=1200, ge=200, le=5000)
+    profile_context_position: str = Field(default="before_memory", pattern=r"^(before_memory|after_memory)$")
 
     model_config = SettingsConfigDict(
         env_prefix="LONGMEMORY_",

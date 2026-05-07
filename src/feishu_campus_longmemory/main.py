@@ -12,6 +12,7 @@ from feishu_campus_longmemory.api.feishu import router as feishu_router
 from feishu_campus_longmemory.api.health import router as health_router
 from feishu_campus_longmemory.api.memory import router as memory_router
 from feishu_campus_longmemory.api.proactive import router as proactive_router
+from feishu_campus_longmemory.api.profile import router as profile_router
 from feishu_campus_longmemory.config import Settings, get_settings
 from feishu_campus_longmemory.db import check_database, create_database_engine, run_migrations
 from feishu_campus_longmemory.errors import register_error_handlers
@@ -77,6 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(feishu_router)
     app.include_router(memory_router)
     app.include_router(proactive_router)
+    app.include_router(profile_router)
     return app
 
 

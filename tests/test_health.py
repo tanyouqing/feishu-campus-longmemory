@@ -21,6 +21,6 @@ def test_health_returns_ok(tmp_path) -> None:
     assert response.json() == {
         "status": "ok",
         "service": "feishu-campus-longmemory",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "database": "ok",
     }

@@ -21,5 +21,6 @@ def test_migrations_create_v0_1_tables(tmp_path) -> None:
         "memory_evidence_links",
         "reminder_jobs",
         "memory_audit_logs",
+        "user_profiles",
+        "user_profile_evidence_links",
     }.issubset(set(inspector.get_table_names()))
-

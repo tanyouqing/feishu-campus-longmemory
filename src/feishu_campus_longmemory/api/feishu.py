@@ -13,6 +13,8 @@ from feishu_campus_longmemory.events.normalize import normalize_feishu_message
 from feishu_campus_longmemory.events.store import EvidenceStore
 from feishu_campus_longmemory.memory.extractor import ExplicitMemoryExtractor
 from feishu_campus_longmemory.memory.store import MemoryStore
+from feishu_campus_longmemory.profile.extractor import UserProfileExtractor
+from feishu_campus_longmemory.profile.store import UserProfileStore
 
 router = APIRouter(prefix="/integrations/feishu", tags=["integrations"])
 
@@ -29,12 +31,17 @@ async def handle_feishu_events(request: Request) -> Response:
 
     store = EvidenceStore(request.app.state.db_engine)
     memory_store = MemoryStore(request.app.state.db_engine)
+    profile_store = UserProfileStore(
+        request.app.state.db_engine,
+        max_markdown_chars=settings.profile_context_max_chars,
+    )
 
     def handle_message(data: P2ImMessageReceiveV1) -> None:
         event = normalize_feishu_message(data)
         result = store.insert_work_event(event)
         if result.created:
             ExplicitMemoryExtractor(settings=settings).process_event(result.event, memory_store)
+            UserProfileExtractor(settings=settings).process_event(result.event, profile_store)
 
     handler = (
         lark.EventDispatcherHandler.builder(

@@ -1,6 +1,6 @@
 # P0 正式版从零启动操作文档
 
-本文档说明如何在 Windows PowerShell 中从零启动 `feishu-campus-longmemory` P0 正式版 `1.0.0` 本地服务。
+本文档说明如何在 Windows PowerShell 中从零启动 `feishu-campus-longmemory` 用户建模 V1.1 `1.1.0` 本地服务。
 
 P0 正式版包含工程骨架、SQLite 迁移、健康检查、真实飞书事件回调、OpenClaw Hook 事件写入、Evidence 查询、显式记忆抽取、记忆写入/更新/忘记、提醒任务持久化、SQLite 结构化记忆检索、Memory Context Pack、Reminder Scheduler 和飞书 Bot 主动提醒。飞书消息发送使用官方 `lark-oapi` SDK，不使用模拟接口替代。
 
@@ -120,7 +120,7 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 {
   "status": "ok",
   "service": "feishu-campus-longmemory",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "database": "ok"
 }
 ```

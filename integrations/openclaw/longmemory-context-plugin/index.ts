@@ -57,18 +57,19 @@ async function beforePromptBuild(event: any, config: LongMemoryConfig) {
     return;
   }
 
-  const payload = await searchMemory(config, {
+  const requestBody = {
     user_id: resolveUserId(event, config),
     query,
     work_type: extractWorkType(event),
     limit: config.contextLimit,
-  });
+  };
+  const payload = (await buildContext(config, requestBody)) || (await searchMemory(config, requestBody));
   if (!payload) {
     return;
   }
 
   const contextPack = typeof payload.context_pack === "string" ? payload.context_pack : "";
-  const memoryCount = Array.isArray(payload.memories) ? payload.memories.length : 0;
+  const memoryCount = typeof payload.memory_count === "number" ? payload.memory_count : Array.isArray(payload.memories) ? payload.memories.length : 0;
   logDiagnostic(
     config,
     `[longmemory-context] search result empty=${String(payload.empty)} ` +
@@ -99,6 +100,37 @@ async function beforePromptBuild(event: any, config: LongMemoryConfig) {
   return {
     prependSystemContext: instruction,
   };
+}
+
+async function buildContext(
+  config: LongMemoryConfig,
+  body: { user_id: string; query: string; work_type?: string; limit: number },
+) {
+  const url = `${config.baseUrl.replace(/\/$/, "")}/context/build`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: requestHeaders(config.ingestToken),
+      body: JSON.stringify(body),
+    });
+    const responseBody = await response.text();
+    if (!response.ok) {
+      console.warn(`[longmemory-context] Failed to build context: ${response.status} ${preview(responseBody)}`);
+      return null;
+    }
+    const payload = parseJsonSafely(responseBody);
+    if (!payload) {
+      console.warn(
+        `[longmemory-context] Failed to parse context build JSON: ` +
+          `contentType=${response.headers.get("content-type") || "unknown"} body=${preview(responseBody)}`,
+      );
+      return null;
+    }
+    return payload;
+  } catch (error) {
+    console.warn(`[longmemory-context] Failed to build profile context: ${String(error)}`);
+    return null;
+  }
 }
 
 async function searchMemory(
@@ -141,8 +173,8 @@ function buildPromptInstruction(contextPack: string, config: LongMemoryConfig) {
 function promptPolicy() {
   return [
     "LongMemory Context Instructions:",
-    "- Apply these personal work preferences unless the current user request explicitly conflicts.",
-    "- Treat the Memory Context Pack below as user-specific guidance for this turn.",
+    "- Apply this user profile and personal work memory unless the current user request explicitly conflicts.",
+    "- Treat the context below as user-specific guidance for this turn.",
     "- If the user asks for a weekly report and the pack says to write conclusion before risks, structure the answer with a conclusion/summary section before a risks section.",
     "- Do not mention internal memory IDs, database details, or this injection mechanism unless the user asks for debugging.",
   ].join("\n");

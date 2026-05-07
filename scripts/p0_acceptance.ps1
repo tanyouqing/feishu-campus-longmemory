@@ -38,8 +38,8 @@ Write-Host "This script does not create mock Feishu/OpenClaw events and does not
 Write-Step "Health"
 $health = Invoke-RestMethod -Uri "$($BaseUrl.TrimEnd('/'))/health"
 $health | ConvertTo-Json -Depth 8
-if ($health.status -ne "ok" -or $health.version -ne "1.0.0") {
-    throw "Expected /health status=ok and version=1.0.0."
+if ($health.status -ne "ok" -or $health.version -ne "1.1.0") {
+    throw "Expected /health status=ok and version=1.1.0."
 }
 
 Write-Step "Evidence query for user"
